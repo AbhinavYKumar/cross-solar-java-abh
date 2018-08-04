@@ -1,6 +1,7 @@
 package com.crossover.techtrial.service;
 
 import com.crossover.techtrial.model.Panel;
+import com.crossover.techtrial.vo.PanelVO;
 
 /**
  * PanelService interface for Panels.
@@ -14,7 +15,7 @@ public interface PanelService {
    * @param panel to register with system.
    */
   
-  void register(Panel panel);
+  void register(PanelVO panel);
   
   Panel findBySerial(String serial);
 }

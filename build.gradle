@@ -13,7 +13,11 @@ buildscript {
 		classpath('com.github.ksoichiro:gradle-console-reporter:0.5.0')
 	}
 }
-
+plugins {
+	id 'net.ltgt.apt' version '0.13'
+	id 'net.ltgt.apt-idea' version '0.13'
+	id 'net.ltgt.apt-eclipse' version '0.13'
+}
 apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: "jacoco"
@@ -21,13 +25,18 @@ apply plugin: "io.spring.dependency-management"
 apply plugin: 'org.springframework.boot'
 apply plugin: 'io.spring.dependency-management'
 apply plugin: 'com.github.ksoichiro.console.reporter'
+apply plugin: "net.ltgt.apt"
 
+configurations {
+    apt
+}
 group = 'com.crossover'
 version = '0.0.1-SNAPSHOT'
 sourceCompatibility = 1.8
 
 repositories {
 	mavenCentral()
+	mavenLocal()
 }
 
 
@@ -37,10 +46,21 @@ dependencies {
 	compile('org.springframework.boot:spring-boot-starter-web')
 	compile('org.springframework.boot:spring-boot-starter-data-rest')
 	compile('com.fasterxml.jackson.core:jackson-core')
+	compile('org.mapstruct:mapstruct-jdk8:1.2.0.Final')
+	testCompile('org.mapstruct:mapstruct-jdk8:1.2.0.Final')
 	testCompile('com.h2database:h2')
 	testCompile('org.springframework.boot:spring-boot-starter-aop')
 	compile('org.liquibase:liquibase-core')
 	runtime('org.springframework.boot:spring-boot-devtools')
 	runtime('mysql:mysql-connector-java')
 	testCompile('org.springframework.boot:spring-boot-starter-test')
+	apt('org.mapstruct:mapstruct-processor:1.2.0.Final')
+}
+
+
+
+tasks.withType(JavaCompile) {
+    options.compilerArgs = [
+            '-Amapstruct.suppressGeneratorTimestamp=true'
+    ]
 }

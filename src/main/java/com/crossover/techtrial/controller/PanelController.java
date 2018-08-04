@@ -1,14 +1,12 @@
 package com.crossover.techtrial.controller;
 
-import com.crossover.techtrial.dto.DailyElectricity;
-import com.crossover.techtrial.model.HourlyElectricity;
-import com.crossover.techtrial.model.Panel;
-import com.crossover.techtrial.service.HourlyElectricityService;
-import com.crossover.techtrial.service.PanelService;
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.validation.Valid;
+
+import org.hibernate.validator.constraints.Length;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +15,13 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.crossover.techtrial.dto.DailyElectricity;
+import com.crossover.techtrial.model.Panel;
+import com.crossover.techtrial.service.HourlyElectricityService;
+import com.crossover.techtrial.service.PanelService;
+import com.crossover.techtrial.vo.HourlyElectricityVO;
+import com.crossover.techtrial.vo.PanelVO;
 
 /**
  * Panel Controller for all Rest APIs related to Panel.
@@ -39,7 +44,7 @@ public class PanelController {
    * @return
    */
   @PostMapping(path = "/api/register")
-  public ResponseEntity<?> registerPanel(@RequestBody Panel panel) {
+  public ResponseEntity<?> registerPanel(@RequestBody PanelVO panel) {
     panelService.register(panel);
     return  ResponseEntity.accepted().build();
   }
@@ -53,8 +58,9 @@ public class PanelController {
   
   @PostMapping(path = "/api/panels/{panel-serial}/hourly")
   public ResponseEntity<?> saveHourlyElectricity(
-      @PathVariable(value = "panel-serial") String panelSerial, 
-      @RequestBody HourlyElectricity hourlyElectricity) {
+      @PathVariable(value = "panel-serial") @Length(min=16, max=16) String panelSerial, 
+      @Valid @RequestBody  HourlyElectricityVO hourlyElectricity) {
+	  System.out.println("hourlyElectricityhourlyElectricity"+hourlyElectricity);
     return ResponseEntity.ok(hourlyElectricityService.save(hourlyElectricity));
   }
    
@@ -64,15 +70,15 @@ public class PanelController {
   
   @GetMapping(path = "/api/panels/{panel-serial}/hourly")
   public ResponseEntity<?> hourlyElectricity(
-      @PathVariable(value = "banel-serial") String panelSerial,
+      @PathVariable(value = "panel-serial") @Length(min=16, max=16) String panelSerial,
       @PageableDefault(size = 5,value = 0) Pageable pageable) {
     Panel panel = panelService.findBySerial(panelSerial);
     if (panel == null) {
       return ResponseEntity.notFound().build(); 
     }
-    Page<HourlyElectricity> page = hourlyElectricityService.getAllHourlyElectricityByPanelId(
+    List<HourlyElectricityVO> hourList = hourlyElectricityService.getAllHourlyElectricityByPanelId(
         panel.getId(), pageable);
-    return ResponseEntity.ok(page);
+    return ResponseEntity.ok(hourList);
   }
   
   /**
@@ -85,7 +91,8 @@ public class PanelController {
   @GetMapping(path = "/api/panels/{panel-serial}/daily")
   public ResponseEntity<List<DailyElectricity>> allDailyElectricityFromYesterday(
       @PathVariable(value = "panel-serial") String panelSerial) {
-    List<DailyElectricity> dailyElectricityForPanel = new ArrayList<>();
+    List<DailyElectricity> dailyElectricityForPanel = new ArrayList<DailyElectricity>();
+    dailyElectricityForPanel.add(hourlyElectricityService.calculateDailyElectricityGenerated(panelSerial));
     /**
      * IMPLEMENT THE LOGIC HERE and FEEL FREE TO MODIFY OR ADD CODE TO RELATED CLASSES.
      * MAKE SURE NOT TO CHANGE THE SIGNATURE OF ANY END POINT. NO PAGINATION IS NEEDED HERE.

@@ -1,8 +1,12 @@
 package com.crossover.techtrial.service;
 
-import com.crossover.techtrial.model.HourlyElectricity;
-import org.springframework.data.domain.Page;
+
+import java.util.List;
+
 import org.springframework.data.domain.Pageable;
+
+import com.crossover.techtrial.dto.DailyElectricity;
+import com.crossover.techtrial.vo.HourlyElectricityVO;
 
 /**
  * HourlyElectricityService interface for all services realted to HourlyElectricity.
@@ -10,7 +14,9 @@ import org.springframework.data.domain.Pageable;
  *
  */
 public interface HourlyElectricityService {
-  HourlyElectricity save(HourlyElectricity hourlyElectricity);
+  HourlyElectricityVO save(HourlyElectricityVO hourlyElectricity);
   
-  Page<HourlyElectricity> getAllHourlyElectricityByPanelId(Long panelId, Pageable pageable);
+  List<HourlyElectricityVO> getAllHourlyElectricityByPanelId(Long panelId, Pageable pageable);
+  
+  public DailyElectricity calculateDailyElectricityGenerated(String panelSerial);
 }

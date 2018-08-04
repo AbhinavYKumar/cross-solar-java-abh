@@ -3,12 +3,14 @@ package com.crossover.techtrial.dto;
 import java.io.Serializable;
 import java.time.LocalDate;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 /**
  * DailyElectricity class will hold sum, average,minimum and maximum electricity for a given day.
  * @author Crossover
  *
  */
-
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class DailyElectricity implements Serializable {
   
   private static final long serialVersionUID = 3605549122072628877L;

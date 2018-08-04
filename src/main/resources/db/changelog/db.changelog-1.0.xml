@@ -35,4 +35,11 @@
          <column name="reading_at">2018-01-31 09:00:00</column>
          </insert>
      </changeSet>
+     <changeSet id="1001122005_update_panel_table" author="Abhinav">
+     <addUniqueConstraint columnNames="serial" tableName="panel"/>
+     </changeSet>
+     <changeSet id="1001122006_update_hourly_electricity_table" author="Abhinav">
+     <addNotNullConstraint  columnName="generated_electricity" columnDataType="BIGINT" tableName="hourly_electricity"/>
+     <addNotNullConstraint columnName="reading_at" columnDataType="datetime" tableName="hourly_electricity"/>
+     </changeSet>
 </databaseChangeLog>

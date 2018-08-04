@@ -1,9 +1,13 @@
 package com.crossover.techtrial.service;
 
-import com.crossover.techtrial.model.Panel;
-import com.crossover.techtrial.repository.PanelRepository;
+import org.mapstruct.factory.Mappers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import com.crossover.techtrial.mapper.PanelMapper;
+import com.crossover.techtrial.model.Panel;
+import com.crossover.techtrial.repository.PanelRepository;
+import com.crossover.techtrial.vo.PanelVO;
 
 
 /**
@@ -17,12 +21,17 @@ public class PanelServiceImpl implements PanelService {
   @Autowired
   PanelRepository panelRepository;
   
-  /* (non-Javadoc)
-   * @see com.crossover.techtrial.service.PanelService#register(com.crossover.techtrial.model.Panel)
-   */
+  @Autowired
+  PanelMapper panelMapper;
+  
+  public PanelServiceImpl(){
+	  panelMapper  = Mappers.getMapper(PanelMapper.class);
+  }
   
   @Override
-  public void register(Panel panel) { 
+  public void register(PanelVO panelVO) { 
+	Panel panel = panelMapper.toDB(panelVO);
+	panelMapper.fromDB(panel);
     panelRepository.save(panel);
   }
   
