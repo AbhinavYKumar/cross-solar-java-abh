@@ -1,0 +1,1374 @@
+From 0ba4cef8bbbe84f1534748f9217aca1fce56c5f2 Mon Sep 17 00:00:00 2001
+From: Abhinav Kumar <abhinavyash.kumar@gmail.com>
+Date: Sat, 4 Aug 2018 16:39:37 +0530
+Subject: [PATCH] My submission
+XOV: XO_0_0_1
+
+---
+ build.gradle                                  |  22 +++-
+ gradlew                                       |   0
+ .../techtrial/CrossSolarApplication.java      |   1 -
+ .../techtrial/controller/PanelController.java |  33 +++--
+ .../techtrial/dto/DailyElectricity.java       |   4 +-
+ .../exceptions/GlobalExceptionHandler.java    |   0
+ .../mapper/HourlyElectricityMapper.java       |  13 ++
+ .../techtrial/mapper/PanelMapper.java         |  14 +++
+ .../techtrial/model/HourlyElectricity.java    |  10 +-
+ .../com/crossover/techtrial/model/Panel.java  |   7 +-
+ .../HourlyElectricityRepository.java          |  11 +-
+ .../techtrial/repository/PanelRepository.java |   1 +
+ .../service/HourlyElectricityService.java     |  14 ++-
+ .../service/HourlyElectricityServiceImpl.java |  54 ++++++--
+ .../techtrial/service/PanelService.java       |   3 +-
+ .../techtrial/service/PanelServiceImpl.java   |  21 +++-
+ .../techtrial/vo/HourlyElectricityVO.java     |  98 +++++++++++++++
+ .../com/crossover/techtrial/vo/PanelVO.java   | 118 ++++++++++++++++++
+ src/main/resources/application.properties     |   2 +-
+ .../db/changelog/db.changelog-1.0.xml         |   7 ++
+ .../db/changelog/db.changelog-master.xml      |   0
+ .../controller/PanelControllerTest.java       |  66 +++++++++-
+ .../model/AssertAnnotationsHelper.java        |  55 ++++++++
+ .../model/HourlyElectricityTest.java          | 106 ++++++++++++++++
+ .../crossover/techtrial/model/PanelTest.java  |  92 ++++++++++++++
+ .../techtrial/model/ReflectToolHelper.java    |  30 +++++
+ .../service/HourlyElectricityServiceTest.java |  32 +++++
+ .../techtrial/vo/HourlyElectricityVOTest.java |  39 ++++++
+ .../crossover/techtrial/vo/PanelVOTest.java   |  47 +++++++
+ 29 files changed, 854 insertions(+), 46 deletions(-)
+ mode change 100755 => 100644 gradlew
+ mode change 100755 => 100644 src/main/java/com/crossover/techtrial/exceptions/GlobalExceptionHandler.java
+ create mode 100644 src/main/java/com/crossover/techtrial/mapper/HourlyElectricityMapper.java
+ create mode 100644 src/main/java/com/crossover/techtrial/mapper/PanelMapper.java
+ create mode 100644 src/main/java/com/crossover/techtrial/vo/HourlyElectricityVO.java
+ create mode 100644 src/main/java/com/crossover/techtrial/vo/PanelVO.java
+ mode change 100755 => 100644 src/main/resources/db/changelog/db.changelog-1.0.xml
+ mode change 100755 => 100644 src/main/resources/db/changelog/db.changelog-master.xml
+ create mode 100644 src/test/java/com/crossover/techtrial/model/AssertAnnotationsHelper.java
+ create mode 100644 src/test/java/com/crossover/techtrial/model/HourlyElectricityTest.java
+ create mode 100644 src/test/java/com/crossover/techtrial/model/PanelTest.java
+ create mode 100644 src/test/java/com/crossover/techtrial/model/ReflectToolHelper.java
+ create mode 100644 src/test/java/com/crossover/techtrial/service/HourlyElectricityServiceTest.java
+ create mode 100644 src/test/java/com/crossover/techtrial/vo/HourlyElectricityVOTest.java
+ create mode 100644 src/test/java/com/crossover/techtrial/vo/PanelVOTest.java
+
+diff --git a/build.gradle b/build.gradle
+index f6cec90..6faa2eb 100644
+--- a/build.gradle
++++ b/build.gradle
+@@ -13,7 +13,11 @@ buildscript {
+ 		classpath('com.github.ksoichiro:gradle-console-reporter:0.5.0')
+ 	}
+ }
+-
++plugins {
++	id 'net.ltgt.apt' version '0.13'
++	id 'net.ltgt.apt-idea' version '0.13'
++	id 'net.ltgt.apt-eclipse' version '0.13'
++}
+ apply plugin: 'java'
+ apply plugin: 'eclipse'
+ apply plugin: "jacoco"
+@@ -21,13 +25,18 @@ apply plugin: "io.spring.dependency-management"
+ apply plugin: 'org.springframework.boot'
+ apply plugin: 'io.spring.dependency-management'
+ apply plugin: 'com.github.ksoichiro.console.reporter'
++apply plugin: "net.ltgt.apt"
+ 
++configurations {
++    apt
++}
+ group = 'com.crossover'
+ version = '0.0.1-SNAPSHOT'
+ sourceCompatibility = 1.8
+ 
+ repositories {
+ 	mavenCentral()
++	mavenLocal()
+ }
+ 
+ 
+@@ -37,10 +46,21 @@ dependencies {
+ 	compile('org.springframework.boot:spring-boot-starter-web')
+ 	compile('org.springframework.boot:spring-boot-starter-data-rest')
+ 	compile('com.fasterxml.jackson.core:jackson-core')
++	compile('org.mapstruct:mapstruct-jdk8:1.2.0.Final')
++	testCompile('org.mapstruct:mapstruct-jdk8:1.2.0.Final')
+ 	testCompile('com.h2database:h2')
+ 	testCompile('org.springframework.boot:spring-boot-starter-aop')
+ 	compile('org.liquibase:liquibase-core')
+ 	runtime('org.springframework.boot:spring-boot-devtools')
+ 	runtime('mysql:mysql-connector-java')
+ 	testCompile('org.springframework.boot:spring-boot-starter-test')
++	apt('org.mapstruct:mapstruct-processor:1.2.0.Final')
+ }
++
++
++
++tasks.withType(JavaCompile) {
++    options.compilerArgs = [
++            '-Amapstruct.suppressGeneratorTimestamp=true'
++    ]
++}
+\ No newline at end of file
+diff --git a/gradlew b/gradlew
+old mode 100755
+new mode 100644
+diff --git a/src/main/java/com/crossover/techtrial/CrossSolarApplication.java b/src/main/java/com/crossover/techtrial/CrossSolarApplication.java
+index 507d8c0..01014c6 100644
+--- a/src/main/java/com/crossover/techtrial/CrossSolarApplication.java
++++ b/src/main/java/com/crossover/techtrial/CrossSolarApplication.java
+@@ -5,7 +5,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
+ 
+ @SpringBootApplication
+ public class CrossSolarApplication {
+-
+   public static void main(String[] args) {
+     SpringApplication.run(CrossSolarApplication.class, args);
+   }
+diff --git a/src/main/java/com/crossover/techtrial/controller/PanelController.java b/src/main/java/com/crossover/techtrial/controller/PanelController.java
+index d308f18..4090574 100644
+--- a/src/main/java/com/crossover/techtrial/controller/PanelController.java
++++ b/src/main/java/com/crossover/techtrial/controller/PanelController.java
+@@ -1,14 +1,12 @@
+ package com.crossover.techtrial.controller;
+ 
+-import com.crossover.techtrial.dto.DailyElectricity;
+-import com.crossover.techtrial.model.HourlyElectricity;
+-import com.crossover.techtrial.model.Panel;
+-import com.crossover.techtrial.service.HourlyElectricityService;
+-import com.crossover.techtrial.service.PanelService;
+ import java.util.ArrayList;
+ import java.util.List;
++
++import javax.validation.Valid;
++
++import org.hibernate.validator.constraints.Length;
+ import org.springframework.beans.factory.annotation.Autowired;
+-import org.springframework.data.domain.Page;
+ import org.springframework.data.domain.Pageable;
+ import org.springframework.data.web.PageableDefault;
+ import org.springframework.http.ResponseEntity;
+@@ -18,6 +16,13 @@ import org.springframework.web.bind.annotation.PostMapping;
+ import org.springframework.web.bind.annotation.RequestBody;
+ import org.springframework.web.bind.annotation.RestController;
+ 
++import com.crossover.techtrial.dto.DailyElectricity;
++import com.crossover.techtrial.model.Panel;
++import com.crossover.techtrial.service.HourlyElectricityService;
++import com.crossover.techtrial.service.PanelService;
++import com.crossover.techtrial.vo.HourlyElectricityVO;
++import com.crossover.techtrial.vo.PanelVO;
++
+ /**
+  * Panel Controller for all Rest APIs related to Panel.
+  * @author Crossover
+@@ -39,7 +44,7 @@ public class PanelController {
+    * @return
+    */
+   @PostMapping(path = "/api/register")
+-  public ResponseEntity<?> registerPanel(@RequestBody Panel panel) {
++  public ResponseEntity<?> registerPanel(@RequestBody PanelVO panel) {
+     panelService.register(panel);
+     return  ResponseEntity.accepted().build();
+   }
+@@ -53,8 +58,9 @@ public class PanelController {
+   
+   @PostMapping(path = "/api/panels/{panel-serial}/hourly")
+   public ResponseEntity<?> saveHourlyElectricity(
+-      @PathVariable(value = "panel-serial") String panelSerial, 
+-      @RequestBody HourlyElectricity hourlyElectricity) {
++      @PathVariable(value = "panel-serial") @Length(min=16, max=16) String panelSerial, 
++      @Valid @RequestBody  HourlyElectricityVO hourlyElectricity) {
++	  System.out.println("hourlyElectricityhourlyElectricity"+hourlyElectricity);
+     return ResponseEntity.ok(hourlyElectricityService.save(hourlyElectricity));
+   }
+    
+@@ -64,15 +70,15 @@ public class PanelController {
+   
+   @GetMapping(path = "/api/panels/{panel-serial}/hourly")
+   public ResponseEntity<?> hourlyElectricity(
+-      @PathVariable(value = "banel-serial") String panelSerial,
++      @PathVariable(value = "panel-serial") @Length(min=16, max=16) String panelSerial,
+       @PageableDefault(size = 5,value = 0) Pageable pageable) {
+     Panel panel = panelService.findBySerial(panelSerial);
+     if (panel == null) {
+       return ResponseEntity.notFound().build(); 
+     }
+-    Page<HourlyElectricity> page = hourlyElectricityService.getAllHourlyElectricityByPanelId(
++    List<HourlyElectricityVO> hourList = hourlyElectricityService.getAllHourlyElectricityByPanelId(
+         panel.getId(), pageable);
+-    return ResponseEntity.ok(page);
++    return ResponseEntity.ok(hourList);
+   }
+   
+   /**
+@@ -85,7 +91,8 @@ public class PanelController {
+   @GetMapping(path = "/api/panels/{panel-serial}/daily")
+   public ResponseEntity<List<DailyElectricity>> allDailyElectricityFromYesterday(
+       @PathVariable(value = "panel-serial") String panelSerial) {
+-    List<DailyElectricity> dailyElectricityForPanel = new ArrayList<>();
++    List<DailyElectricity> dailyElectricityForPanel = new ArrayList<DailyElectricity>();
++    dailyElectricityForPanel.add(hourlyElectricityService.calculateDailyElectricityGenerated(panelSerial));
+     /**
+      * IMPLEMENT THE LOGIC HERE and FEEL FREE TO MODIFY OR ADD CODE TO RELATED CLASSES.
+      * MAKE SURE NOT TO CHANGE THE SIGNATURE OF ANY END POINT. NO PAGINATION IS NEEDED HERE.
+diff --git a/src/main/java/com/crossover/techtrial/dto/DailyElectricity.java b/src/main/java/com/crossover/techtrial/dto/DailyElectricity.java
+index b0e0ea9..c0aea56 100644
+--- a/src/main/java/com/crossover/techtrial/dto/DailyElectricity.java
++++ b/src/main/java/com/crossover/techtrial/dto/DailyElectricity.java
+@@ -3,12 +3,14 @@ package com.crossover.techtrial.dto;
+ import java.io.Serializable;
+ import java.time.LocalDate;
+ 
++import com.fasterxml.jackson.annotation.JsonInclude;
++
+ /**
+  * DailyElectricity class will hold sum, average,minimum and maximum electricity for a given day.
+  * @author Crossover
+  *
+  */
+-
++@JsonInclude(JsonInclude.Include.NON_NULL)
+ public class DailyElectricity implements Serializable {
+   
+   private static final long serialVersionUID = 3605549122072628877L;
+diff --git a/src/main/java/com/crossover/techtrial/exceptions/GlobalExceptionHandler.java b/src/main/java/com/crossover/techtrial/exceptions/GlobalExceptionHandler.java
+old mode 100755
+new mode 100644
+diff --git a/src/main/java/com/crossover/techtrial/mapper/HourlyElectricityMapper.java b/src/main/java/com/crossover/techtrial/mapper/HourlyElectricityMapper.java
+new file mode 100644
+index 0000000..753bfcd
+--- /dev/null
++++ b/src/main/java/com/crossover/techtrial/mapper/HourlyElectricityMapper.java
+@@ -0,0 +1,13 @@
++package com.crossover.techtrial.mapper;
++
++import org.mapstruct.Mapper;
++import org.mapstruct.ReportingPolicy;
++
++import com.crossover.techtrial.model.HourlyElectricity;
++import com.crossover.techtrial.vo.HourlyElectricityVO;
++
++@Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE, componentModel="spring")
++public interface HourlyElectricityMapper {
++	public HourlyElectricityVO fromDB(HourlyElectricity HourlyElectricity);
++	public HourlyElectricity toDB(HourlyElectricityVO hourlyElectricityVO);
++}
+diff --git a/src/main/java/com/crossover/techtrial/mapper/PanelMapper.java b/src/main/java/com/crossover/techtrial/mapper/PanelMapper.java
+new file mode 100644
+index 0000000..58fb695
+--- /dev/null
++++ b/src/main/java/com/crossover/techtrial/mapper/PanelMapper.java
+@@ -0,0 +1,14 @@
++package com.crossover.techtrial.mapper;
++
++import org.mapstruct.Mapper;
++import org.mapstruct.ReportingPolicy;
++
++import com.crossover.techtrial.model.Panel;
++import com.crossover.techtrial.vo.PanelVO;
++
++@Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE, componentModel = "spring")
++public interface PanelMapper {
++public PanelVO fromDB(Panel panel);
++
++public Panel toDB(PanelVO panelVO);
++}
+diff --git a/src/main/java/com/crossover/techtrial/model/HourlyElectricity.java b/src/main/java/com/crossover/techtrial/model/HourlyElectricity.java
+index 275f765..a826aec 100644
+--- a/src/main/java/com/crossover/techtrial/model/HourlyElectricity.java
++++ b/src/main/java/com/crossover/techtrial/model/HourlyElectricity.java
+@@ -1,16 +1,18 @@
+ package com.crossover.techtrial.model;
+ 
+-import com.fasterxml.jackson.annotation.JsonIgnore;
+ import java.io.Serializable;
+ import java.time.LocalDateTime;
++
+ import javax.persistence.Column;
+ import javax.persistence.Entity;
++import javax.persistence.FetchType;
+ import javax.persistence.GeneratedValue;
+ import javax.persistence.GenerationType;
+ import javax.persistence.Id;
+ import javax.persistence.JoinColumn;
+ import javax.persistence.ManyToOne;
+ import javax.persistence.Table;
++import javax.validation.constraints.NotNull;
+ 
+ 
+ /**
+@@ -30,14 +32,16 @@ public class HourlyElectricity implements Serializable {
+   @GeneratedValue(strategy = GenerationType.IDENTITY)
+   Long id;
+   
+-  @JsonIgnore
+-  @ManyToOne
++  @NotNull
++  @ManyToOne(fetch = FetchType.EAGER)
+   @JoinColumn(name = "panel_id", referencedColumnName = "id")
+   Panel panel;
+   
++  @NotNull
+   @Column(name = "generated_electricity")
+   Long generatedElectricity;
+   
++  @NotNull
+   @Column(name = "reading_at")
+   LocalDateTime readingAt;
+ 
+diff --git a/src/main/java/com/crossover/techtrial/model/Panel.java b/src/main/java/com/crossover/techtrial/model/Panel.java
+index 34fb762..c6b63f3 100644
+--- a/src/main/java/com/crossover/techtrial/model/Panel.java
++++ b/src/main/java/com/crossover/techtrial/model/Panel.java
+@@ -1,13 +1,18 @@
+ package com.crossover.techtrial.model;
+ 
+ import java.io.Serializable;
++
+ import javax.persistence.Column;
+ import javax.persistence.Entity;
+ import javax.persistence.GeneratedValue;
+ import javax.persistence.GenerationType;
+ import javax.persistence.Id;
+ import javax.persistence.Table;
++import javax.validation.constraints.Digits;
+ import javax.validation.constraints.NotNull;
++import javax.validation.constraints.Size;
++
++import org.hibernate.validator.constraints.Length;
+ import org.springframework.lang.Nullable;
+ 
+ /**
+@@ -27,7 +32,7 @@ public class Panel implements Serializable {
+   Long id;
+ 
+   @NotNull
+-  @Column(name = "serial")
++  @Column(name = "serial",unique=true)
+   String serial;
+ 
+   @Column(name = "longitude")
+diff --git a/src/main/java/com/crossover/techtrial/repository/HourlyElectricityRepository.java b/src/main/java/com/crossover/techtrial/repository/HourlyElectricityRepository.java
+index b883493..a7f5148 100644
+--- a/src/main/java/com/crossover/techtrial/repository/HourlyElectricityRepository.java
++++ b/src/main/java/com/crossover/techtrial/repository/HourlyElectricityRepository.java
+@@ -1,11 +1,17 @@
+ package com.crossover.techtrial.repository;
+ 
+-import com.crossover.techtrial.model.HourlyElectricity;
++import java.time.LocalDateTime;
++import java.util.List;
++
+ import org.springframework.data.domain.Page;
+ import org.springframework.data.domain.Pageable;
++import org.springframework.data.jpa.repository.Query;
+ import org.springframework.data.repository.PagingAndSortingRepository;
++import org.springframework.data.repository.query.Param;
+ import org.springframework.data.rest.core.annotation.RestResource;
+ 
++import com.crossover.techtrial.model.HourlyElectricity;
++
+ /**
+  * HourlyElectricity Repository is for all operations for HourlyElectricity.
+  * @author Crossover
+@@ -14,4 +20,7 @@ import org.springframework.data.rest.core.annotation.RestResource;
+ public interface HourlyElectricityRepository 
+     extends PagingAndSortingRepository<HourlyElectricity,Long> {
+   Page<HourlyElectricity> findAllByPanelIdOrderByReadingAtDesc(Long panelId,Pageable pageable);
++  
++  @Query("SELECT t FROM HourlyElectricity t where t.readingAt = :readingAt AND t.panel.serial = :serial")
++  List<HourlyElectricity> findAllByDateAndSerial(@Param("readingAt") LocalDateTime readingAt,@Param("serial") String serial);
+ }
+diff --git a/src/main/java/com/crossover/techtrial/repository/PanelRepository.java b/src/main/java/com/crossover/techtrial/repository/PanelRepository.java
+index dcba8f3..7cbcfb5 100644
+--- a/src/main/java/com/crossover/techtrial/repository/PanelRepository.java
++++ b/src/main/java/com/crossover/techtrial/repository/PanelRepository.java
+@@ -12,4 +12,5 @@ import org.springframework.data.rest.core.annotation.RestResource;
+ @RestResource(exported = false)
+ public interface PanelRepository extends PagingAndSortingRepository<Panel, Long> {
+   Panel findBySerial(String serial);
++  
+ }
+diff --git a/src/main/java/com/crossover/techtrial/service/HourlyElectricityService.java b/src/main/java/com/crossover/techtrial/service/HourlyElectricityService.java
+index 70c40b7..b56985f 100644
+--- a/src/main/java/com/crossover/techtrial/service/HourlyElectricityService.java
++++ b/src/main/java/com/crossover/techtrial/service/HourlyElectricityService.java
+@@ -1,16 +1,22 @@
+ package com.crossover.techtrial.service;
+ 
+-import com.crossover.techtrial.model.HourlyElectricity;
+-import org.springframework.data.domain.Page;
++
++import java.util.List;
++
+ import org.springframework.data.domain.Pageable;
+ 
++import com.crossover.techtrial.dto.DailyElectricity;
++import com.crossover.techtrial.vo.HourlyElectricityVO;
++
+ /**
+  * HourlyElectricityService interface for all services realted to HourlyElectricity.
+  * @author Crossover
+  *
+  */
+ public interface HourlyElectricityService {
+-  HourlyElectricity save(HourlyElectricity hourlyElectricity);
++  HourlyElectricityVO save(HourlyElectricityVO hourlyElectricity);
++  
++  List<HourlyElectricityVO> getAllHourlyElectricityByPanelId(Long panelId, Pageable pageable);
+   
+-  Page<HourlyElectricity> getAllHourlyElectricityByPanelId(Long panelId, Pageable pageable);
++  public DailyElectricity calculateDailyElectricityGenerated(String panelSerial);
+ }
+diff --git a/src/main/java/com/crossover/techtrial/service/HourlyElectricityServiceImpl.java b/src/main/java/com/crossover/techtrial/service/HourlyElectricityServiceImpl.java
+index 6634e49..c073df2 100644
+--- a/src/main/java/com/crossover/techtrial/service/HourlyElectricityServiceImpl.java
++++ b/src/main/java/com/crossover/techtrial/service/HourlyElectricityServiceImpl.java
+@@ -1,12 +1,24 @@
+ package com.crossover.techtrial.service;
+ 
+-import com.crossover.techtrial.model.HourlyElectricity;
+-import com.crossover.techtrial.repository.HourlyElectricityRepository;
++import java.time.LocalDate;
++import java.time.LocalDateTime;
++import java.time.ZoneId;
++import java.util.ArrayList;
++import java.util.Collections;
++import java.util.Comparator;
++import java.util.Date;
++import java.util.List;
+ 
+ import org.springframework.beans.factory.annotation.Autowired;
+-import org.springframework.data.domain.Page;
+ import org.springframework.data.domain.Pageable;
+ import org.springframework.stereotype.Service;
++import org.springframework.util.CollectionUtils;
++
++import com.crossover.techtrial.dto.DailyElectricity;
++import com.crossover.techtrial.mapper.HourlyElectricityMapper;
++import com.crossover.techtrial.model.HourlyElectricity;
++import com.crossover.techtrial.repository.HourlyElectricityRepository;
++import com.crossover.techtrial.vo.HourlyElectricityVO;
+ 
+ /**
+  * HourlyElectricityServiceImpl will handle electricity generated by a Panel.
+@@ -19,13 +31,39 @@ import org.springframework.stereotype.Service;
+ public class HourlyElectricityServiceImpl implements HourlyElectricityService {
+   @Autowired
+   HourlyElectricityRepository hourlyElectricityRepository;
++  @Autowired
++  HourlyElectricityMapper hourlyElectricityMapper;
+   
+-  public HourlyElectricity save(HourlyElectricity hourlyElectricity) {
+-    return hourlyElectricityRepository.save(hourlyElectricity);
++  public HourlyElectricityVO save(HourlyElectricityVO hourlyElectricityVO) {
++	HourlyElectricity hourlyElectricity =hourlyElectricityMapper.toDB(hourlyElectricityVO);
++	HourlyElectricityVO electricityVO = hourlyElectricityMapper.fromDB(hourlyElectricityRepository.save(hourlyElectricity));
++    return electricityVO;
+   }
+   
+-  public Page<HourlyElectricity> getAllHourlyElectricityByPanelId(Long panelId, Pageable pageable) {
+-    return hourlyElectricityRepository.findAllByPanelIdOrderByReadingAtDesc(panelId, pageable);
++  public List<HourlyElectricityVO> getAllHourlyElectricityByPanelId(Long panelId, Pageable pageable) {
++	  List<HourlyElectricity> hourlyList = hourlyElectricityRepository.findAllByPanelIdOrderByReadingAtDesc(panelId, pageable).getContent();
++	  List<HourlyElectricityVO> electricityVOs = new ArrayList<HourlyElectricityVO>();
++	  for(HourlyElectricity hElectricity : hourlyList){
++		  HourlyElectricityVO electricityVO = hourlyElectricityMapper.fromDB(hElectricity);
++		  electricityVOs.add(electricityVO);
++	  }
++    return electricityVOs;
+   }
+-  
++  public DailyElectricity calculateDailyElectricityGenerated(String panelSerial){
++	  LocalDateTime today =new Date().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
++	  List<HourlyElectricity> dayData = hourlyElectricityRepository.findAllByDateAndSerial(today, panelSerial);
++	  DailyElectricity dailyElectricity = new DailyElectricity();
++	  if(!CollectionUtils.isEmpty(dayData)){
++	  Long sum = dayData.size()>1 ? dayData.stream().filter(o -> o.getGeneratedElectricity() > 10).mapToLong(HourlyElectricity::getGeneratedElectricity).sum() : dayData.get(0).getGeneratedElectricity();
++	  dailyElectricity.setSum(sum);
++	  Double average = dayData.size()>1 ? (dayData.stream().filter(o -> o.getGeneratedElectricity() > 10).mapToLong(HourlyElectricity::getGeneratedElectricity).average()).getAsDouble() : dayData.get(0).getGeneratedElectricity();
++	  dailyElectricity.setAverage(average);
++	  Long min = dayData.size()>1 ? (Collections.min(dayData, Comparator.comparing(s -> s.getGeneratedElectricity()))).getGeneratedElectricity() : 0;
++	  dailyElectricity.setMin(min);
++	  Long max = dayData.size()>1 ? (Collections.max(dayData, Comparator.comparing(s -> s.getGeneratedElectricity()))).getGeneratedElectricity() : dayData.get(0).getGeneratedElectricity();
++	  dailyElectricity.setMax(max);
++	  }
++	  return dailyElectricity;
++  }
++ 
+ }
+\ No newline at end of file
+diff --git a/src/main/java/com/crossover/techtrial/service/PanelService.java b/src/main/java/com/crossover/techtrial/service/PanelService.java
+index b1ba940..a6a54d3 100644
+--- a/src/main/java/com/crossover/techtrial/service/PanelService.java
++++ b/src/main/java/com/crossover/techtrial/service/PanelService.java
+@@ -1,6 +1,7 @@
+ package com.crossover.techtrial.service;
+ 
+ import com.crossover.techtrial.model.Panel;
++import com.crossover.techtrial.vo.PanelVO;
+ 
+ /**
+  * PanelService interface for Panels.
+@@ -14,7 +15,7 @@ public interface PanelService {
+    * @param panel to register with system.
+    */
+   
+-  void register(Panel panel);
++  void register(PanelVO panel);
+   
+   Panel findBySerial(String serial);
+ }
+diff --git a/src/main/java/com/crossover/techtrial/service/PanelServiceImpl.java b/src/main/java/com/crossover/techtrial/service/PanelServiceImpl.java
+index 48649de..32869ca 100644
+--- a/src/main/java/com/crossover/techtrial/service/PanelServiceImpl.java
++++ b/src/main/java/com/crossover/techtrial/service/PanelServiceImpl.java
+@@ -1,10 +1,14 @@
+ package com.crossover.techtrial.service;
+ 
+-import com.crossover.techtrial.model.Panel;
+-import com.crossover.techtrial.repository.PanelRepository;
++import org.mapstruct.factory.Mappers;
+ import org.springframework.beans.factory.annotation.Autowired;
+ import org.springframework.stereotype.Service;
+ 
++import com.crossover.techtrial.mapper.PanelMapper;
++import com.crossover.techtrial.model.Panel;
++import com.crossover.techtrial.repository.PanelRepository;
++import com.crossover.techtrial.vo.PanelVO;
++
+ 
+ /**
+  * PanelServiceImpl for panel related handling.
+@@ -17,12 +21,17 @@ public class PanelServiceImpl implements PanelService {
+   @Autowired
+   PanelRepository panelRepository;
+   
+-  /* (non-Javadoc)
+-   * @see com.crossover.techtrial.service.PanelService#register(com.crossover.techtrial.model.Panel)
+-   */
++  @Autowired
++  PanelMapper panelMapper;
++  
++  public PanelServiceImpl(){
++	  panelMapper  = Mappers.getMapper(PanelMapper.class);
++  }
+   
+   @Override
+-  public void register(Panel panel) { 
++  public void register(PanelVO panelVO) { 
++	Panel panel = panelMapper.toDB(panelVO);
++	panelMapper.fromDB(panel);
+     panelRepository.save(panel);
+   }
+   
+diff --git a/src/main/java/com/crossover/techtrial/vo/HourlyElectricityVO.java b/src/main/java/com/crossover/techtrial/vo/HourlyElectricityVO.java
+new file mode 100644
+index 0000000..d44f65d
+--- /dev/null
++++ b/src/main/java/com/crossover/techtrial/vo/HourlyElectricityVO.java
+@@ -0,0 +1,98 @@
++package com.crossover.techtrial.vo;
++
++import com.fasterxml.jackson.annotation.JsonIgnore;
++import com.fasterxml.jackson.annotation.JsonInclude;
++
++@JsonInclude(JsonInclude.Include.NON_NULL)
++public class HourlyElectricityVO {
++
++  Long id;
++  @JsonIgnore
++  PanelVO panel;
++  
++  Long generatedElectricity;
++  
++  String readingAt;
++
++  public Long getId() {
++    return id;
++  }
++
++  public void setId(Long id) {
++    this.id = id;
++  }
++
++  public PanelVO getPanel() {
++    return panel;
++  }
++
++  public void setPanel(PanelVO panel) {
++    this.panel = panel;
++  }
++
++  public Long getGeneratedElectricity() {
++    return generatedElectricity;
++  }
++
++  public void setGeneratedElectricity(Long generatedElectricity) {
++    this.generatedElectricity = generatedElectricity;
++  }
++
++  public String getReadingAt() {
++    return readingAt;
++  }
++
++  public void setReadingAt(String readingAt) {
++    this.readingAt = readingAt;
++  }
++
++  
++  @Override
++  public int hashCode() {
++    final int prime = 31;
++    int result = 1;
++    result = prime * result + ((id == null) ? 0 : id.hashCode());
++    result = prime * result + ((readingAt == null) ? 0 : readingAt.hashCode());
++    return result;
++  }
++
++  
++  @Override
++  public boolean equals(Object obj) {
++    if (this == obj) {
++      return true;
++    }
++    if (obj == null) {
++      return false;
++    }
++    if (getClass() != obj.getClass()) {
++      return false;
++    }
++    HourlyElectricityVO other = (HourlyElectricityVO) obj;
++    if (id == null) {
++      if (other.id != null) {
++        return false;
++      }
++    } else if (!id.equals(other.id)) {
++      return false;
++    }
++    if (readingAt == null) {
++      if (other.readingAt != null) {
++        return false;
++      }
++    } else if (!readingAt.equals(other.readingAt)) {
++      return false;
++    }
++    return true;
++  }
++
++  
++  @Override
++  public String toString() {
++    return "HourlyElectricity [id=" + id + ", panel=" + panel + ", generatedElectricity="
++        + generatedElectricity + ", readingAt=" + readingAt + "]";
++  }
++  
++  
++  
++}
+diff --git a/src/main/java/com/crossover/techtrial/vo/PanelVO.java b/src/main/java/com/crossover/techtrial/vo/PanelVO.java
+new file mode 100644
+index 0000000..451c4f8
+--- /dev/null
++++ b/src/main/java/com/crossover/techtrial/vo/PanelVO.java
+@@ -0,0 +1,118 @@
++package com.crossover.techtrial.vo;
++
++import javax.validation.constraints.Digits;
++
++import org.hibernate.validator.constraints.Length;
++
++import com.fasterxml.jackson.annotation.JsonInclude;
++@JsonInclude(JsonInclude.Include.NON_NULL)
++public class PanelVO{
++	
++  Long id;
++  
++  @Length(min=16, max=16)
++  String serial;
++  
++  @Digits(integer = 2, fraction = 6)
++  Double longitude;
++  
++  @Digits(integer = 2, fraction = 6)
++  Double latitude;
++
++  String brand;
++
++  public Long getId() {
++    return id;
++  }
++
++  public void setId(Long id) {
++    this.id = id;
++  }
++
++  public String getSerial() {
++    return serial;
++  }
++
++  public void setSerial(String serial) {
++    this.serial = serial;
++  }
++
++  public Double getLongitude() {
++    return longitude;
++  }
++
++  public void setLongitude(Double longitude) {
++    this.longitude = longitude;
++  }
++
++  public Double getLatitude() {
++    return latitude;
++  }
++
++  public void setLatitude(Double latitude) {
++    this.latitude = latitude;
++  }
++
++  public String getBrand() {
++    return brand;
++  }
++
++  public void setBrand(String brand) {
++    this.brand = brand;
++  }
++
++  
++  @Override
++  public int hashCode() {
++    final int prime = 31;
++    int result = 1;
++    result = prime * result + ((brand == null) ? 0 : brand.hashCode());
++    result = prime * result + ((id == null) ? 0 : id.hashCode());
++    result = prime * result + ((serial == null) ? 0 : serial.hashCode());
++    return result;
++  }
++
++  
++  @Override
++  public boolean equals(Object obj) {
++    if (this == obj) {
++      return true;
++    }
++    if (obj == null) {
++      return false;
++    }
++    if (getClass() != obj.getClass()) {
++      return false;
++    }
++    PanelVO other = (PanelVO) obj;
++    if (brand == null) {
++      if (other.brand != null) {
++        return false;
++      }
++    } else if (!brand.equals(other.brand)) {
++      return false;
++    }
++    if (id == null) {
++      if (other.id != null) {
++        return false;
++      }
++    } else if (!id.equals(other.id)) {
++      return false;
++    }
++    if (serial == null) {
++      if (other.serial != null) {
++        return false;
++      }
++    } else if (!serial.equals(other.serial)) {
++      return false;
++    }
++    return true;
++  }
++
++ 
++  @Override
++  public String toString() {
++    return "Panel [id=" + id + ", serial=" + serial + ", longitude=" + longitude + ", latitude="
++        + latitude + ", brand=" + brand + "]";
++  }
++}
+diff --git a/src/main/resources/application.properties b/src/main/resources/application.properties
+index c7cc890..5d05b73 100644
+--- a/src/main/resources/application.properties
++++ b/src/main/resources/application.properties
+@@ -2,7 +2,7 @@
+ #Database connection Parameters
+ spring.datasource.url: jdbc:mysql://localhost:3306/crosssolar?createDatabaseIfNotExist=true&useSSL=false
+ spring.datasource.username=root
+-spring.datasource.password=
++spring.datasource.password=root
+ spring.datasource.driver-class-name=com.mysql.jdbc.Driver
+ 
+ spring.jpa.hibernate.ddl-auto=none
+diff --git a/src/main/resources/db/changelog/db.changelog-1.0.xml b/src/main/resources/db/changelog/db.changelog-1.0.xml
+old mode 100755
+new mode 100644
+index e143a10..6450a5f
+--- a/src/main/resources/db/changelog/db.changelog-1.0.xml
++++ b/src/main/resources/db/changelog/db.changelog-1.0.xml
+@@ -35,4 +35,11 @@
+          <column name="reading_at">2018-01-31 09:00:00</column>
+          </insert>
+      </changeSet>
++     <changeSet id="1001122005_update_panel_table" author="Abhinav">
++     <addUniqueConstraint columnNames="serial" tableName="panel"/>
++     </changeSet>
++     <changeSet id="1001122006_update_hourly_electricity_table" author="Abhinav">
++     <addNotNullConstraint  columnName="generated_electricity" columnDataType="BIGINT" tableName="hourly_electricity"/>
++     <addNotNullConstraint columnName="reading_at" columnDataType="datetime" tableName="hourly_electricity"/>
++     </changeSet>
+ </databaseChangeLog>
+diff --git a/src/main/resources/db/changelog/db.changelog-master.xml b/src/main/resources/db/changelog/db.changelog-master.xml
+old mode 100755
+new mode 100644
+diff --git a/src/test/java/com/crossover/techtrial/controller/PanelControllerTest.java b/src/test/java/com/crossover/techtrial/controller/PanelControllerTest.java
+index a1deacf..1e6c01d 100644
+--- a/src/test/java/com/crossover/techtrial/controller/PanelControllerTest.java
++++ b/src/test/java/com/crossover/techtrial/controller/PanelControllerTest.java
+@@ -1,10 +1,14 @@
+ package com.crossover.techtrial.controller;
+ 
++import com.crossover.techtrial.mapper.PanelMapper;
+ import com.crossover.techtrial.model.Panel;
++import com.crossover.techtrial.service.PanelService;
++
+ import org.junit.Assert;
+ import org.junit.Before;
+ import org.junit.Test;
+ import org.junit.runner.RunWith;
++import org.mapstruct.factory.Mappers;
+ import org.mockito.Mock;
+ import org.springframework.beans.factory.annotation.Autowired;
+ import org.springframework.boot.test.context.SpringBootTest;
+@@ -35,24 +39,76 @@ public class PanelControllerTest {
+   @Mock
+   private PanelController panelController;
+   
++  @Mock
++  private PanelService panelService;
++  
+   @Autowired
+   private TestRestTemplate template;
+-
++  
+   @Before
+   public void setup() throws Exception {
++	PanelMapper INSTANCE = Mappers.getMapper(PanelMapper.class);
+     mockMvc = MockMvcBuilders.standaloneSetup(panelController).build();
+   }
+-
+-  @Test
+-  public void testPanelShouldBeRegistered() throws Exception {
++  @Test  
++  public void testPanelNotAllowDuplicateSerialNumberForRegisteration() {
++    HttpEntity<Object> panel = getHttpEntity(
++        "{\"serial\": \"1234567890123456\", \"longitude\": \"54.123232\"," 
++            + " \"latitude\": \"54.123232\",\"brand\":\"tesla\" }");
++    ResponseEntity<Panel> response = template.postForEntity(
++        "/api/register", panel, Panel.class);
++    Assert.assertEquals(400,response.getStatusCode().value());
++  }
++  @Test  
++  public void testPanelSerialNumberSizeValidation() {
+     HttpEntity<Object> panel = getHttpEntity(
+         "{\"serial\": \"232323\", \"longitude\": \"54.123232\"," 
+             + " \"latitude\": \"54.123232\",\"brand\":\"tesla\" }");
+     ResponseEntity<Panel> response = template.postForEntity(
+         "/api/register", panel, Panel.class);
+-    Assert.assertEquals(202,response.getStatusCode().value());
++    Assert.assertEquals(400,response.getStatusCode().value());
++  }
++  
++  @Test  
++  public void testPanelLatitudeValueFormatValidation() {
++    HttpEntity<Object> panel = getHttpEntity(
++        "{\"serial\": \"1234567890123456\", \"longitude\": \"54.123232\"," 
++            + " \"latitude\": \"54.1232323\",\"brand\":\"tesla\" }");
++    ResponseEntity<Panel> response = template.postForEntity(
++        "/api/register", panel, Panel.class);
++    Assert.assertEquals(400,response.getStatusCode().value());
+   }
+ 
++  @Test  
++  public void testPanelLongitudeValueFormatValidation() {
++    HttpEntity<Object> panel = getHttpEntity(
++        "{\"serial\": \"1234567890123456\", \"longitude\": \"54.1232329\"," 
++            + " \"latitude\": \"54.123232\",\"brand\":\"tesla\" }");
++    ResponseEntity<Panel> response = template.postForEntity(
++        "/api/register", panel, Panel.class);
++    Assert.assertEquals(400,response.getStatusCode().value());
++  }
++  @Test  
++  public void testSaveHourlyElectricityWrongSerialNumber() {
++	 HttpEntity<Object> hourly = getHttpEntity(
++		        "{\"panelId\": \"1\", \"longitude\": \"54.1232329\"," 
++		            + " \"latitude\": \"54.123232\",\"brand\":\"tesla\" }");
++   
++    ResponseEntity<Panel> response = template.postForEntity(
++        "/api/panels/123456/hourly", hourly, Panel.class);
++    Assert.assertEquals(400,response.getStatusCode().value());
++  }
++  @Test  
++  public void testSaveHourlyElectricityWrongLongitudeNumber() {
++	 HttpEntity<Object> hourly = getHttpEntity(
++		        "{\"panelId\": \"1\", \"longitude\": \"54.12323295464\"," 
++		            + " \"latitude\": \"54.123232\",\"brand\":\"tesla\" }");
++   
++    ResponseEntity<Panel> response = template.postForEntity(
++        "/api/panels/1234567890123456/hourly", hourly, Panel.class);
++    Assert.assertEquals(400,response.getStatusCode().value());
++  }
++  
+   private HttpEntity<Object> getHttpEntity(Object body) {
+     HttpHeaders headers = new HttpHeaders();
+     headers.setContentType(MediaType.APPLICATION_JSON);
+diff --git a/src/test/java/com/crossover/techtrial/model/AssertAnnotationsHelper.java b/src/test/java/com/crossover/techtrial/model/AssertAnnotationsHelper.java
+new file mode 100644
+index 0000000..8a92d8c
+--- /dev/null
++++ b/src/test/java/com/crossover/techtrial/model/AssertAnnotationsHelper.java
+@@ -0,0 +1,55 @@
++package com.crossover.techtrial.model;
++
++import java.lang.annotation.Annotation;
++import java.util.Arrays;
++import java.util.List;
++
++public class AssertAnnotationsHelper {
++	private static void assertAnnotations(List<Class> annotationClasses, List<Annotation> annotations) {
++		// length
++		if (annotationClasses.size() != annotations.size()) {
++			throw new AssertionError(String.format("Expected %d annotations, but found %d", annotationClasses.size(),
++					annotations.size()));
++		}
++		// exists
++		annotationClasses.forEach(ac -> {
++			long cnt = annotations.stream().filter(a -> a.annotationType().isAssignableFrom(ac)).count();
++			if (cnt == 0) {
++				throw new AssertionError(String.format("No annotation of type %s found", ac.getName()));
++			}
++		});
++	}
++
++	public static void assertType(Class c, Class... annotationClasses) {
++
++		assertAnnotations(
++
++				Arrays.asList(annotationClasses)
++
++				, Arrays.asList(c.getAnnotations())
++
++		);
++
++	}
++
++	public static void assertField(Class c, String fieldName, Class... annotationClasses) {
++		try {
++			assertAnnotations(Arrays.asList(annotationClasses),
++					Arrays.asList(c.getDeclaredField(fieldName).getAnnotations()));
++			System.out.println(c.getDeclaredField(fieldName).getAnnotations().length);
++		} catch (NoSuchFieldException nsfe) {
++			throw new AssertionError(nsfe);
++		}
++	}
++
++	public static void assertMethod(Class c, String getterName, Class... annotationClasses) {
++		try {
++			assertAnnotations(Arrays.asList(annotationClasses),
++					Arrays.asList(c.getDeclaredMethod(getterName).getAnnotations()));
++
++		} catch (NoSuchMethodException nsfe) {
++			throw new AssertionError(nsfe);
++		}
++
++	}
++}
+diff --git a/src/test/java/com/crossover/techtrial/model/HourlyElectricityTest.java b/src/test/java/com/crossover/techtrial/model/HourlyElectricityTest.java
+new file mode 100644
+index 0000000..670a30b
+--- /dev/null
++++ b/src/test/java/com/crossover/techtrial/model/HourlyElectricityTest.java
+@@ -0,0 +1,106 @@
++package com.crossover.techtrial.model;
++
++import java.util.HashSet;
++import java.util.Set;
++
++import javax.persistence.Column;
++import javax.persistence.Entity;
++import javax.persistence.GeneratedValue;
++import javax.persistence.JoinColumn;
++import javax.persistence.ManyToOne;
++import javax.persistence.Table;
++import javax.validation.constraints.NotNull;
++
++import org.junit.Assert;
++import org.junit.Test;
++import org.junit.runner.RunWith;
++import org.springframework.lang.Nullable;
++import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
++
++import com.fasterxml.jackson.annotation.JsonIgnore;
++@RunWith(SpringJUnit4ClassRunner.class)
++public class HourlyElectricityTest {
++	@Test
++	public void typeAnnotations() {
++		// assert
++		AssertAnnotationsHelper.assertType(
++				HourlyElectricity.class, Entity.class, Table.class);
++	}
++
++	@Test
++	public void fieldAnnotations() {
++		Class twoAnnotation[] = {NotNull.class,Column.class};
++		Class primaryAnnotations[] = {javax.persistence.Id.class,GeneratedValue.class};
++		Class threeAnnotations[] = {NotNull.class, ManyToOne.class, JoinColumn.class};
++		AssertAnnotationsHelper.assertField(HourlyElectricity.class, "id",primaryAnnotations);
++		AssertAnnotationsHelper.assertField(HourlyElectricity.class, "panel",threeAnnotations);
++		AssertAnnotationsHelper.assertField(HourlyElectricity.class, "generatedElectricity", twoAnnotation);
++		AssertAnnotationsHelper.assertField(HourlyElectricity.class, "readingAt", twoAnnotation);
++
++	}
++
++	
++
++	@Test
++	public void entity() {
++		Entity a= ReflectToolHelper.getClassAnnotation(HourlyElectricity.class, Entity.class);
++		Assert.assertEquals("", a.name());
++	}
++
++	@Test
++	public void table() {
++		// setup
++		Table t= ReflectToolHelper.getClassAnnotation(HourlyElectricity.class, Table.class);
++		// assert
++		Assert.assertEquals("hourly_electricity", t.name());
++
++	}
++
++	@Test 
++	public void equalsAndHashCode() {
++		// setup
++		HourlyElectricity panel=new HourlyElectricity();
++		panel.setId(1L);
++		HourlyElectricity samePanel=new HourlyElectricity();
++		samePanel.setId(1L);
++		HourlyElectricity diffPanel=new HourlyElectricity();
++		diffPanel.setId(2L);
++		//assert
++		Set<HourlyElectricity> set =new HashSet<HourlyElectricity>();
++		set.add(panel);
++		Assert.assertFalse(set.add(samePanel));
++		Assert.assertTrue(set.add(diffPanel));
++		// TODO Auto-generated constructor stub
++	}
++	
++	
++	
++	@Test
++	public void panel() {
++		// setup
++		JoinColumn c= ReflectToolHelper.getFieldAnnotation(
++		HourlyElectricity.class, "panel", JoinColumn.class);
++		// assert
++		Assert.assertEquals("panel_id", c.name());
++
++	}
++
++	@Test
++	public void generatedElectricity() {
++		// setup
++		Column c= ReflectToolHelper.getFieldAnnotation(
++		HourlyElectricity.class, "generatedElectricity", Column.class);
++		// assert
++		Assert.assertEquals("generated_electricity", c.name());
++	}
++
++	@Test
++	public void readingAt() {
++		// setup
++		Column a= ReflectToolHelper.getFieldAnnotation(
++		HourlyElectricity.class, "readingAt", Column.class);
++		// assert
++		Assert.assertEquals("reading_at", a.name());
++
++	}
++}
+diff --git a/src/test/java/com/crossover/techtrial/model/PanelTest.java b/src/test/java/com/crossover/techtrial/model/PanelTest.java
+new file mode 100644
+index 0000000..a873ed0
+--- /dev/null
++++ b/src/test/java/com/crossover/techtrial/model/PanelTest.java
+@@ -0,0 +1,92 @@
++package com.crossover.techtrial.model;
++import java.util.HashSet;
++import java.util.Set;
++
++import javax.persistence.Column;
++import javax.persistence.Entity;
++import javax.persistence.GeneratedValue;
++import javax.persistence.Table;
++import javax.validation.constraints.NotNull;
++
++import org.junit.Assert;
++import org.junit.Test;
++import org.junit.runner.RunWith;
++import org.springframework.lang.Nullable;
++import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
++@RunWith(SpringJUnit4ClassRunner.class)
++public class PanelTest {
++	@Test
++	public void typeAnnotations() {
++		// assert
++		AssertAnnotationsHelper.assertType(
++				Panel.class, Entity.class, Table.class);
++	}
++	@Test
++	public void fieldAnnotations() {
++		Class twoAnnotationsWithNotNull[] = {NotNull.class,Column.class};
++		Class oneAnnotation[] = {Column.class};
++		Class twoAnnotationsWithOutNull[] = {Nullable.class,Column.class};
++		Class primaryAnnotations[] = {javax.persistence.Id.class,GeneratedValue.class};
++		AssertAnnotationsHelper.assertField(Panel.class, "id",primaryAnnotations);
++		AssertAnnotationsHelper.assertField(Panel.class, "serial",twoAnnotationsWithNotNull);
++		AssertAnnotationsHelper.assertField(Panel.class, "longitude", oneAnnotation);
++		AssertAnnotationsHelper.assertField(Panel.class, "latitude", oneAnnotation);
++		AssertAnnotationsHelper.assertField(Panel.class, "brand", twoAnnotationsWithOutNull);
++
++	}
++	@Test
++	public void entity() {
++		Entity a= ReflectToolHelper.getClassAnnotation(Panel.class, Entity.class);
++		Assert.assertEquals("", a.name());
++	}
++	@Test
++	public void table() {
++		// setup
++		Table t= ReflectToolHelper.getClassAnnotation(Panel.class, Table.class);
++		// assert
++		Assert.assertEquals("panel", t.name());
++
++	}
++	@Test 
++	public void equalsAndHashCode() {
++		// setup
++		Panel panel=new Panel();
++		panel.setId(1L);
++		Panel samePanel=new Panel();
++		samePanel.setId(1L);
++		Panel diffPanel=new Panel();
++		diffPanel.setId(2L);
++		//assert
++		Set<Panel> set =new HashSet<Panel>();
++		set.add(panel);
++		Assert.assertFalse(set.add(samePanel));
++		Assert.assertTrue(set.add(diffPanel));
++		// TODO Auto-generated constructor stub
++	}
++	@Test
++	public void serial() {
++		// setup
++		Column c= ReflectToolHelper.getFieldAnnotation(
++		Panel.class, "serial", Column.class);
++		// assert
++		Assert.assertEquals("serial", c.name());
++
++	}
++	@Test
++	public void longitude() {
++		// setup
++		Column c= ReflectToolHelper.getFieldAnnotation(
++		Panel.class, "longitude", Column.class);
++		// assert
++		Assert.assertEquals("longitude", c.name());
++	}
++	@Test
++	public void brand() {
++		// setup
++		Column a= ReflectToolHelper.getFieldAnnotation(
++		Panel.class, "brand", Column.class);
++		// assert
++		Assert.assertEquals("brand", a.name());
++
++	}
++}
+diff --git a/src/test/java/com/crossover/techtrial/model/ReflectToolHelper.java b/src/test/java/com/crossover/techtrial/model/ReflectToolHelper.java
+new file mode 100644
+index 0000000..1dd4cdb
+--- /dev/null
++++ b/src/test/java/com/crossover/techtrial/model/ReflectToolHelper.java
+@@ -0,0 +1,30 @@
++package com.crossover.techtrial.model;
++
++import java.lang.annotation.Annotation;
++import java.lang.reflect.Field;
++import java.lang.reflect.Method;
++
++public class ReflectToolHelper {
++	public static <T extends Annotation> T getMethodAnnotation(Class<?> c, String methodName, Class<T> annotation) {
++		try {
++			Method m = c.getDeclaredMethod(methodName);
++			return (T) m.getAnnotation(annotation);
++		} catch (NoSuchMethodException nsme) {
++			throw new RuntimeException(nsme);
++		}
++
++	}
++
++	public static <T extends Annotation> T getFieldAnnotation(Class<?> c, String fieldName, Class<T> annotation) {
++		try {
++			Field f = c.getDeclaredField(fieldName);
++			return (T) f.getAnnotation(annotation);
++		} catch (NoSuchFieldException nsme) {
++			throw new RuntimeException(nsme);
++		}
++	}
++
++	public static <T extends Annotation> T getClassAnnotation(Class<?> c, Class<T> annotation) {
++		return (T) c.getAnnotation(annotation);
++	}
++}
+diff --git a/src/test/java/com/crossover/techtrial/service/HourlyElectricityServiceTest.java b/src/test/java/com/crossover/techtrial/service/HourlyElectricityServiceTest.java
+new file mode 100644
+index 0000000..86a9cb0
+--- /dev/null
++++ b/src/test/java/com/crossover/techtrial/service/HourlyElectricityServiceTest.java
+@@ -0,0 +1,32 @@
++package com.crossover.techtrial.service;
++
++import static org.junit.Assert.assertEquals;
++import static org.mockito.Mockito.when;
++
++import java.util.ArrayList;
++import java.util.List;
++
++import org.junit.Test;
++import org.junit.runner.RunWith;
++import org.mockito.InjectMocks;
++import org.mockito.Mock;
++import org.mockito.junit.MockitoJUnitRunner;
++import org.springframework.data.domain.PageImpl;
++
++import com.crossover.techtrial.model.HourlyElectricity;
++import com.crossover.techtrial.repository.HourlyElectricityRepository;
++
++@RunWith(MockitoJUnitRunner.class)
++public class HourlyElectricityServiceTest {
++	@Mock
++	HourlyElectricityRepository hourlyElectricityRepository;
++	@InjectMocks
++	HourlyElectricityServiceImpl electricityServiceImpl;
++	@Test
++    public void testFindTheGreatestFromAllData() {
++		org.springframework.data.domain.PageRequest pageRequest = new org.springframework.data.domain.PageRequest(0, 10);
++		List<HourlyElectricity> list = new ArrayList<HourlyElectricity>();
++        when(hourlyElectricityRepository.findAllByPanelIdOrderByReadingAtDesc(1234567890123456L, pageRequest)).thenReturn(new PageImpl<HourlyElectricity>(list));
++        assertEquals(0, electricityServiceImpl.getAllHourlyElectricityByPanelId(1234567890123456L, pageRequest).size());
++    }
++}
+diff --git a/src/test/java/com/crossover/techtrial/vo/HourlyElectricityVOTest.java b/src/test/java/com/crossover/techtrial/vo/HourlyElectricityVOTest.java
+new file mode 100644
+index 0000000..c187255
+--- /dev/null
++++ b/src/test/java/com/crossover/techtrial/vo/HourlyElectricityVOTest.java
+@@ -0,0 +1,39 @@
++package com.crossover.techtrial.vo;
++
++import static org.junit.Assert.assertTrue;
++
++import org.junit.Test;
++import org.junit.runner.RunWith;
++import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
++
++@RunWith(SpringJUnit4ClassRunner.class)
++public class HourlyElectricityVOTest {
++	  @Test
++	  public void testSetId() {
++		  HourlyElectricityVO electricityVO = new HourlyElectricityVO();
++		  electricityVO.setId(3214242424L);
++		  assertTrue(electricityVO.getId() == 3214242424L);
++	  }
++	  @Test
++	  public void testSetPanel() {
++		  PanelVO panelVO= new PanelVO();
++		  panelVO.setId(100L);
++		  HourlyElectricityVO electricityVO = new HourlyElectricityVO();
++		  electricityVO.setId(3214242424L);
++		  electricityVO.setPanel(panelVO);
++		  assertTrue(electricityVO.getPanel().equals(panelVO));
++	  }
++	  @Test
++	  public void testSetGeneratedElectricity() {
++		  HourlyElectricityVO electricityVO = new HourlyElectricityVO();
++		  electricityVO.setGeneratedElectricity(435345L);
++		  assertTrue(electricityVO.getGeneratedElectricity()==435345L);
++	  }
++	  @Test
++	  public void testSetReadingAt() {
++		  HourlyElectricityVO electricityVO = new HourlyElectricityVO();
++		  electricityVO.setReadingAt("2018-01-31 09:00:00");
++		  assertTrue(electricityVO.getReadingAt().equals("2018-01-31 09:00:00"));
++	  }
++  
++}
+diff --git a/src/test/java/com/crossover/techtrial/vo/PanelVOTest.java b/src/test/java/com/crossover/techtrial/vo/PanelVOTest.java
+new file mode 100644
+index 0000000..4c56c16
+--- /dev/null
++++ b/src/test/java/com/crossover/techtrial/vo/PanelVOTest.java
+@@ -0,0 +1,47 @@
++package com.crossover.techtrial.vo;
++
++import static org.junit.Assert.assertTrue;
++
++import org.junit.Test;
++import org.junit.runner.RunWith;
++import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
++@RunWith(SpringJUnit4ClassRunner.class)
++public class PanelVOTest{
++	@Test
++	public void testSetId() {
++		PanelVO panelVO= new PanelVO();
++		panelVO.setId(100L);
++		assertTrue(panelVO.getId() == 100L);
++	  }
++	  @Test
++	  public void testSetSerial() {
++		  PanelVO panelVO= new PanelVO();
++		  panelVO.setSerial("1234567890123456");
++		  assertTrue(panelVO.getSerial() == "1234567890123456");
++	  }
++	  @Test
++	  public void testWrongSerial() {
++		  PanelVO panelVO= new PanelVO();
++		  panelVO.setSerial("1234567890123465445656");
++		  
++	  }
++	  @Test
++	  public void testSetLongitude() {
++		  PanelVO panelVO= new PanelVO();
++		  panelVO.setLongitude(12.1234567);
++		  assertTrue(panelVO.getLongitude() == 12.1234567);
++	  }
++	  @Test
++	  public void testSetLatitude() {
++		  PanelVO panelVO= new PanelVO();
++		  panelVO.setLatitude(12.1234567);
++		  assertTrue(panelVO.getLatitude() == 12.1234567);
++	  }
++	  @Test
++	  public void setBrand() {
++		  PanelVO panelVO= new PanelVO();
++		  panelVO.setBrand("tesla");
++		  assertTrue(panelVO.getBrand() == "tesla");
++	  }
++
++}
+-- 
+2.18.0.windows.1
+
